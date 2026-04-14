@@ -3,32 +3,198 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Looki</title>
+  <title>AI Looki Guard</title>
   <meta
     name="description"
-    content="AI Looki GitHub Pages starter site."
+    content="중고거래 허위매물과 조작 이미지를 탐지하는 AI 검수 서비스, AI Looki Guard."
   >
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap"
     rel="stylesheet"
   >
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="background" aria-hidden="true"></div>
-  <main class="shell">
-    <section class="hero">
-      <p class="eyebrow">GitHub Pages Ready</p>
-      <h1>AI Looki</h1>
-      <p class="lead">
-        현재 폴더명과 같은 이름으로 시작한 단일 페이지입니다.
-        GitHub 저장소만 연결하면 바로 퍼블리시할 수 있습니다.
+  <div class="page-glow" aria-hidden="true"></div>
+  <div class="page-grid" aria-hidden="true"></div>
+
+  <main class="site-shell">
+    <section class="hero panel">
+      <div class="hero-copy">
+        <p class="eyebrow">AI ROOKIE 2026 · General Track Concept</p>
+        <h1>AI Looki Guard</h1>
+        <p class="hero-lead">
+          중고거래 사진의 조작 흔적, 도용 가능성, 설명과 이미지의 불일치를 함께 검수해
+          허위매물과 사기 위험을 먼저 경고하는 멀티모달 AI 안전 보조 시스템.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-strong" href="https://ai-looki.vercel.app" target="_blank" rel="noreferrer">
+            Live on Vercel
+          </a>
+          <a class="button button-ghost" href="https://github.com/bitanaria-cyber/AI-Looki" target="_blank" rel="noreferrer">
+            GitHub Repo
+          </a>
+        </div>
+      </div>
+
+      <div class="hero-card">
+        <p class="card-label">Risk Scan</p>
+        <div class="risk-score">
+          <strong>87</strong>
+          <span>주의 필요</span>
+        </div>
+        <ul class="signal-list">
+          <li>상품 모서리 주변 합성 흔적 감지</li>
+          <li>설명에 없는 흠집 영역 존재</li>
+          <li>배경 패턴 반복으로 편집 가능성 높음</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="problem-strip">
+      <article class="problem-pill">
+        <span class="pill-index">01</span>
+        <p>손상 부위를 지우거나 흐리게 가려 실제 상태를 숨김</p>
+      </article>
+      <article class="problem-pill">
+        <span class="pill-index">02</span>
+        <p>도용 이미지를 올리고 정상 판매글처럼 설명을 붙임</p>
+      </article>
+      <article class="problem-pill">
+        <span class="pill-index">03</span>
+        <p>사진과 설명이 어긋나는데 구매자는 즉시 알아채기 어려움</p>
+      </article>
+    </section>
+
+    <section class="section-grid">
+      <section class="panel">
+        <div class="section-heading">
+          <p class="eyebrow">What It Solves</p>
+          <h2>문제는 사진 한 장이 아니라 검수 부재다</h2>
+        </div>
+        <p class="body-copy">
+          중고거래 사기는 단순 보정 여부만으로 끝나지 않는다. 배경 합성, 스크래치 삭제,
+          상품 상태 과장, 설명-이미지 불일치가 함께 일어난다. AI Looki Guard는 이 조합을
+          한 번에 보고 구매자에게 위험도를 설명하는 방향으로 설계한다.
+        </p>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <p class="eyebrow">Why This Fits</p>
+          <h2>대회 심사에서 먹히는 이유</h2>
+        </div>
+        <p class="body-copy">
+          사회적 문제 해결성이 뚜렷하고, 이미지 분석과 멀티모달 추론을 함께 보여줄 수 있다.
+          단순 챗봇보다 실사용 맥락이 명확하고, 결과를 시각적으로 설명하기 쉬워 데모 전달력도 좋다.
+        </p>
+      </section>
+    </section>
+
+    <section class="capability-section">
+      <div class="section-heading section-heading-wide">
+        <p class="eyebrow">Core Capabilities</p>
+        <h2>세 가지 축으로 검수한다</h2>
+      </div>
+
+      <div class="capability-grid">
+        <article class="panel capability-card">
+          <span class="capability-kicker">Forensics</span>
+          <h3>이미지 조작 흔적 탐지</h3>
+          <p>
+            경계 왜곡, 질감 불연속, 복제 흔적, 과도한 보정 영역을 포착해 사람이 놓치기 쉬운
+            편집 흔적을 추려낸다.
+          </p>
+        </article>
+
+        <article class="panel capability-card">
+          <span class="capability-kicker">Consistency</span>
+          <h3>설명-이미지 일치 검수</h3>
+          <p>
+            판매 문구와 실제 사진을 함께 읽고 색상, 구성품, 손상 여부, 모델명 등 핵심 정보가
+            맞는지 비교한다.
+          </p>
+        </article>
+
+        <article class="panel capability-card">
+          <span class="capability-kicker">Explainability</span>
+          <h3>위험 근거 리포트</h3>
+          <p>
+            정상, 주의, 위험 단계로 점수를 보여주고 어떤 영역이 의심스러운지 시각적으로
+            표시해 판단 보조 도구로 쓴다.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="workflow panel">
+      <div class="section-heading">
+        <p class="eyebrow">Demo Flow</p>
+        <h2>발표에서는 이렇게 보여주면 된다</h2>
+      </div>
+
+      <div class="timeline">
+        <article class="timeline-step">
+          <span class="timeline-no">1</span>
+          <h3>판매글 입력</h3>
+          <p>사진 여러 장과 설명 문구를 업로드한다.</p>
+        </article>
+        <article class="timeline-step">
+          <span class="timeline-no">2</span>
+          <h3>AI 검수 실행</h3>
+          <p>조작 흔적 분석과 텍스트-이미지 비교를 동시에 수행한다.</p>
+        </article>
+        <article class="timeline-step">
+          <span class="timeline-no">3</span>
+          <h3>위험도 산출</h3>
+          <p>정상, 주의, 위험 단계와 핵심 경고 사유를 요약한다.</p>
+        </article>
+        <article class="timeline-step">
+          <span class="timeline-no">4</span>
+          <h3>근거 확인</h3>
+          <p>의심 영역 하이라이트와 설명 불일치 포인트를 제시한다.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-grid">
+      <section class="panel plan-card">
+        <div class="section-heading">
+          <p class="eyebrow">MVP Scope</p>
+          <h2>처음엔 좁게 시작한다</h2>
+        </div>
+        <ul class="detail-list">
+          <li>카테고리는 전자기기 또는 운동화처럼 한정</li>
+          <li>도용 이미지, 손상 숨기기, 배경 편집 위주로 우선 대응</li>
+          <li>사기 확정이 아니라 위험 경고 보조 도구로 포지셔닝</li>
+        </ul>
+      </section>
+
+      <section class="panel plan-card">
+        <div class="section-heading">
+          <p class="eyebrow">Build Stack</p>
+          <h2>지금 연결한 인프라 활용</h2>
+        </div>
+        <ul class="detail-list">
+          <li>Vercel: 소개 페이지와 추후 API 배포</li>
+          <li>Supabase: 사용자 기록, 검수 결과 저장</li>
+          <li>Gemini API: 멀티모달 설명 비교와 위험 근거 요약</li>
+        </ul>
+      </section>
+    </section>
+
+    <section class="closing panel">
+      <p class="eyebrow">Project Direction</p>
+      <h2>
+        “AI가 사진을 대신 믿는” 서비스가 아니라,
+        사람이 더 안전하게 판단하도록 돕는 AI를 만든다.
+      </h2>
+      <p class="body-copy">
+        이 페이지는 AI Rookie 제출 아이디어 확인용 초안이다. 다음 단계는 도전제안서 문안을
+        맞추고, 실제 업로드-검수 데모 흐름을 붙이는 것이다.
       </p>
-      <a class="cta" href="https://github.com" target="_blank" rel="noreferrer">
-        Open GitHub
-      </a>
     </section>
   </main>
 </body>
