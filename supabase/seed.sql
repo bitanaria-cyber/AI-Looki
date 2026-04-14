@@ -1,0 +1,1 @@
+-- Seed file added only to verify the GitHub to Supabase preview workflow.
