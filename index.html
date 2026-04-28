@@ -15,6 +15,7 @@
     rel="stylesheet"
   >
   <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -23,6 +24,7 @@
       AI Looki Guard
     </a>
     <nav class="nav-links" aria-label="주요 섹션">
+      <a href="#scanner">분석</a>
       <a href="#problem">문제</a>
       <a href="#features">기능</a>
       <a href="#build">구현</a>
@@ -40,8 +42,8 @@
           사용자가 거래 전 위험 요소를 이해할 수 있도록 단계별 경고와 자연어 설명을 제공합니다.
         </p>
         <div class="hero-actions" aria-label="프로젝트 링크">
-          <a class="button button-primary" href="https://ai-looki.vercel.app" target="_blank" rel="noreferrer">
-            Vercel 보기
+          <a class="button button-primary" href="#scanner">
+            이미지 분석하기
           </a>
           <a class="button button-secondary" href="https://github.com/bitanaria-cyber/AI-Looki" target="_blank" rel="noreferrer">
             GitHub 보기
@@ -97,6 +99,87 @@
           </li>
         </ul>
       </aside>
+    </section>
+
+    <section id="scanner" class="section scanner-section" aria-labelledby="scanner-title">
+      <div class="section-heading">
+        <p class="eyebrow">Live Scanner</p>
+        <h2 id="scanner-title">상품 이미지를 올리면 조작 가능성을 바로 계산합니다.</h2>
+      </div>
+
+      <div class="scanner-layout">
+        <section class="scanner-panel upload-panel" aria-label="이미지 업로드">
+          <label class="upload-zone" id="dropZone" for="imageInput">
+            <span class="upload-token">AI</span>
+            <strong>상품 이미지 업로드</strong>
+            <span>JPG, PNG, WebP</span>
+          </label>
+          <input class="sr-only" id="imageInput" type="file" accept="image/png,image/jpeg,image/webp">
+
+          <label class="field-label" for="listingText">판매 설명</label>
+          <textarea
+            id="listingText"
+            rows="4"
+            placeholder="예: 생활 흠집 조금 있는 A급 스마트폰입니다."
+          ></textarea>
+
+          <div class="scanner-actions">
+            <button class="button button-primary" id="analyzeButton" type="button" disabled>분석 실행</button>
+            <button class="button button-secondary" id="resetButton" type="button">초기화</button>
+          </div>
+
+          <div class="preview-box">
+            <img id="previewImage" alt="업로드한 상품 이미지 미리보기">
+            <div class="preview-placeholder" id="previewPlaceholder">미리보기 대기</div>
+          </div>
+          <p class="preview-meta" id="previewMeta">선택된 이미지가 없습니다.</p>
+        </section>
+
+        <section class="scanner-panel result-panel" aria-label="분석 결과">
+          <div class="result-topline">
+            <span class="verdict-badge neutral" id="resultBadge">대기</span>
+            <span class="model-chip">On-device analysis</span>
+          </div>
+
+          <div class="risk-meter">
+            <div class="risk-ring" id="riskRing">
+              <strong id="riskValue">--</strong>
+              <span>%</span>
+            </div>
+            <div>
+              <h3 id="resultTitle">이미지를 업로드하세요</h3>
+              <p id="resultSummary">분석 결과가 여기에 표시됩니다.</p>
+            </div>
+          </div>
+
+          <div class="meter-bar" aria-hidden="true">
+            <span id="meterFill"></span>
+          </div>
+
+          <ul class="result-list" id="reasonList">
+            <li>이미지 선택 후 분석을 실행하면 주요 의심 근거가 정리됩니다.</li>
+          </ul>
+
+          <div class="metric-grid" id="metricGrid">
+            <article>
+              <span>메타데이터</span>
+              <strong>--</strong>
+            </article>
+            <article>
+              <span>압축 흔적</span>
+              <strong>--</strong>
+            </article>
+            <article>
+              <span>노이즈 균일도</span>
+              <strong>--</strong>
+            </article>
+            <article>
+              <span>패턴 반복</span>
+              <strong>--</strong>
+            </article>
+          </div>
+        </section>
+      </div>
     </section>
 
     <section id="problem" class="section problem-section" aria-labelledby="problem-title">
