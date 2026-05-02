@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Looki Guard | 중고거래 이미지 사기 방지 시스템</title>
+  <title>이미지 진위 판별 | AI Looki Guard</title>
   <meta
     name="description"
-    content="AI 이미지 분석으로 중고거래 상품 이미지의 생성, 조작 가능성을 탐지하고 사용자에게 단계별 위험 설명을 제공하는 프로젝트입니다."
+    content="중고거래 상품 이미지를 업로드하면 이미지 조작 가능성과 위험 근거를 브라우저에서 분석합니다."
   >
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,263 +15,162 @@
     rel="stylesheet"
   >
   <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="#top" aria-label="AI Looki Guard 홈">
+    <a class="brand" href="index.html" aria-label="AI Looki Guard 홈">
       <span class="brand-mark" aria-hidden="true"></span>
       AI Looki Guard
     </a>
     <nav class="nav-links" aria-label="주요 섹션">
-      <a href="scanner.html">분석</a>
-      <a href="#problem">문제</a>
-      <a href="#features">기능</a>
-      <a href="#build">구현</a>
-      <a href="#roadmap">일정</a>
+      <a href="#scanner">분석 메인</a>
+      <a href="#signals">탐지 신호</a>
+      <a href="logic.html">탐지 방식</a>
+      <a href="proposal.html">제안 개요</a>
     </nav>
   </header>
 
   <main id="top">
-    <section class="hero" aria-labelledby="hero-title">
-      <div class="hero-copy">
-        <p class="eyebrow">2026 인공지능 루키 대회 · 일반 트랙</p>
-        <h1 id="hero-title">중고거래 이미지 사기, 거래 전에 걸러냅니다.</h1>
+    <section id="scanner" class="section scanner-section scanner-page" aria-labelledby="scanner-title">
+      <div class="section-heading">
+        <p class="eyebrow">Live Scanner</p>
+        <h1 id="scanner-title">루트 화면에서 바로 이미지 조작 가능성을 분석합니다</h1>
         <p class="hero-lead">
-          AI 이미지 분석을 통해 상품 사진의 AI 생성 흔적, 조작 가능성, 설명과 이미지의 불일치를 탐지하고
-          사용자가 거래 전 위험 요소를 이해할 수 있도록 단계별 경고와 자연어 설명을 제공합니다.
+          중고거래 상품 사진을 업로드하면 브라우저에서 압축 경계, 노이즈 분포, 반복 패턴, 메타데이터,
+          판매 설명과의 불일치를 함께 계산해 조작 가능성과 핵심 근거를 바로 표시합니다.
         </p>
-        <div class="hero-actions" aria-label="프로젝트 링크">
-          <a class="button button-primary" href="scanner.html">
-            이미지 분석하기
-          </a>
-          <a class="button button-secondary" href="https://github.com/bitanaria-cyber/AI-Looki" target="_blank" rel="noreferrer">
-            GitHub 보기
-          </a>
-          <a class="button button-ghost" href="logic.html">
-            탐지 로직 보기
-          </a>
+        <div class="hero-actions" aria-label="분석 관련 링크">
+          <a class="button button-primary" href="logic.html">어떤 방식으로 판단하는지 보기</a>
+          <a class="button button-secondary" href="proposal.html">제안 개요 보기</a>
         </div>
-
-        <div class="hero-mini-grid">
-          <article class="panel-soft hero-mini-card">
-            <span class="card-label">Upload</span>
-            <strong>사진 최대 4장</strong>
-            <p>JPG, PNG, WEBP 이미지를 브라우저에서 바로 읽는다.</p>
-          </article>
-          <article class="panel-soft hero-mini-card">
-            <span class="card-label">Check</span>
-            <strong>설명과 같이 비교</strong>
-            <p>색상, 상태, 하자 문구를 추출해 사진과 함께 교차 검증한다.</p>
-          </article>
-          <article class="panel-soft hero-mini-card">
-            <span class="card-label">Result</span>
-            <strong>근거 중심 결과</strong>
-            <p>점수만 보여주지 않고 왜 의심했는지 문장으로 정리한다.</p>
-          </article>
-        </div>
-        <dl class="team-meta" aria-label="제안서 정보">
-          <div>
-            <dt>도전과제</dt>
-            <dd>AI 이미지 분석을 통한 중고거래 사기 방지 시스템</dd>
-          </div>
-          <div>
-            <dt>팀</dt>
-            <dd>사기지옥 · 황경민</dd>
-          </div>
-        </dl>
       </div>
 
-      <aside class="scan-board" aria-label="AI 분석 결과 예시">
-        <div class="listing-preview">
-          <div class="sample-photo" role="img" aria-label="중고 스마트폰 상품 사진 분석 예시">
-            <span class="phone-body"></span>
-            <span class="scan-line"></span>
-            <span class="heat heat-a"></span>
-            <span class="heat heat-b"></span>
-            <span class="heat heat-c"></span>
-          </div>
-          <div class="listing-copy">
-            <p class="listing-title">중고 스마트폰 · A급</p>
-            <p>사진은 깨끗하지만 화면 가장자리와 배경 패턴에서 반복 흔적이 감지되었습니다.</p>
-          </div>
-        </div>
+      <div class="scanner-layout">
+        <section class="scanner-panel upload-panel" aria-label="이미지 업로드">
+          <label class="upload-zone" id="dropZone" for="imageInput">
+            <span class="upload-token">AI</span>
+            <strong>상품 이미지 업로드</strong>
+            <span>JPG, PNG, WebP</span>
+          </label>
+          <input class="sr-only" id="imageInput" type="file" accept="image/png,image/jpeg,image/webp">
 
-        <div class="risk-summary">
-          <div>
-            <span class="label">분석 결과</span>
-            <strong>의심 이미지</strong>
+          <label class="field-label" for="listingText">판매 설명</label>
+          <textarea
+            id="listingText"
+            rows="4"
+            placeholder="예: 생활 흠집 조금 있는 A급 스마트폰입니다."
+          ></textarea>
+
+          <div class="scanner-actions">
+            <button class="button button-primary" id="analyzeButton" type="button" disabled>분석 실행</button>
+            <button class="button button-secondary" id="resetButton" type="button">초기화</button>
           </div>
-          <span class="score">78%</span>
-        </div>
 
-        <ul class="signal-list">
-          <li>
-            <span class="signal-dot warning"></span>
-            배경 노이즈와 상품 경계선이 자연스럽지 않음
-          </li>
-          <li>
-            <span class="signal-dot caution"></span>
-            설명의 “생활 흠집 있음”과 사진 상태가 불일치
-          </li>
-          <li>
-            <span class="signal-dot ok"></span>
-            업로드 전 사용자에게 경고 메시지 제공 가능
-          </li>
-        </ul>
-      </aside>
-    </section>
+          <div class="preview-box">
+            <img id="previewImage" alt="업로드한 상품 이미지 미리보기">
+            <div class="preview-placeholder" id="previewPlaceholder">미리보기 대기</div>
+          </div>
+          <p class="preview-meta" id="previewMeta">선택된 이미지가 없습니다.</p>
+        </section>
 
-    <section id="problem" class="section problem-section" aria-labelledby="problem-title">
-      <div class="section-heading">
-        <p class="eyebrow">Problem</p>
-        <h2 id="problem-title">중고거래 사진은 믿기 쉬운데, 검증하기는 어렵습니다.</h2>
-      </div>
-      <div class="problem-grid">
-        <article class="info-card">
-          <span class="card-number">01</span>
-          <h3>생성형 AI 이미지</h3>
-          <p>실제로 존재하지 않는 상품 이미지를 만들어 구매자를 속이는 사례가 늘고 있습니다.</p>
-        </article>
-        <article class="info-card">
-          <span class="card-number">02</span>
-          <h3>상품 상태 조작</h3>
-          <p>흠집, 파손, 사용 흔적을 보정하거나 지워 실제 상태보다 좋아 보이게 만들 수 있습니다.</p>
-        </article>
-        <article class="info-card">
-          <span class="card-number">03</span>
-          <h3>검증 장치 부족</h3>
-          <p>일반 사용자는 이미지의 패턴, 노이즈, 메타데이터를 직접 확인하기 어렵습니다.</p>
-        </article>
+        <section class="scanner-panel result-panel" aria-label="분석 결과">
+          <div class="result-topline">
+            <span class="verdict-badge neutral" id="resultBadge">대기</span>
+            <span class="model-chip">On-device analysis</span>
+          </div>
+
+          <div class="risk-meter">
+            <div class="risk-ring" id="riskRing">
+              <strong id="riskValue">--</strong>
+              <span>%</span>
+            </div>
+            <div>
+              <h3 id="resultTitle">이미지를 업로드하세요</h3>
+              <p id="resultSummary">분석 결과가 여기에 표시됩니다.</p>
+            </div>
+          </div>
+
+          <div class="meter-bar" aria-hidden="true">
+            <span id="meterFill"></span>
+          </div>
+
+          <ul class="result-list" id="reasonList">
+            <li>이미지 선택 후 분석을 실행하면 주요 의심 근거가 정리됩니다.</li>
+          </ul>
+
+          <div class="metric-grid" id="metricGrid">
+            <article>
+              <span>메타데이터</span>
+              <strong>--</strong>
+            </article>
+            <article>
+              <span>압축 흔적</span>
+              <strong>--</strong>
+            </article>
+            <article>
+              <span>노이즈 균일도</span>
+              <strong>--</strong>
+            </article>
+            <article>
+              <span>패턴 반복</span>
+              <strong>--</strong>
+            </article>
+          </div>
+        </section>
       </div>
     </section>
 
-    <section id="features" class="section split-section" aria-labelledby="features-title">
+    <section id="signals" class="section split-section" aria-labelledby="signals-title">
       <div class="section-heading">
-        <p class="eyebrow">Core Features</p>
-        <h2 id="features-title">판별보다 중요한 것은 거래 판단에 바로 쓰이는 설명입니다.</h2>
+        <p class="eyebrow">What It Checks</p>
+        <h2 id="signals-title">조작된 이미지로 의심하는 이유를 신호별로 보여줍니다.</h2>
       </div>
       <div class="feature-list">
         <article class="feature-row">
           <span class="feature-index">A</span>
           <div>
-            <h3>이미지 생성·조작 가능성 분석</h3>
-            <p>CNN 기반 모델로 이미지 패턴, 노이즈, 생성 흔적, 경계선 이상 여부를 분석합니다.</p>
+            <h3>메타데이터 확인</h3>
+            <p>JPEG 원본 EXIF가 비어 있거나 원본 정보가 부족하면 원본성 판단 근거가 약하다고 본다.</p>
           </div>
         </article>
         <article class="feature-row">
           <span class="feature-index">B</span>
           <div>
-            <h3>단계별 위험 결과</h3>
-            <p>정상 이미지, 의심 이미지, 조작 가능성 높음처럼 사용자가 즉시 이해할 수 있는 단계로 표시합니다.</p>
+            <h3>압축 경계 비교</h3>
+            <p>8픽셀 단위 경계가 내부보다 유난히 강하면 재저장, 부분 편집, 합성 흔적 가능성을 높인다.</p>
           </div>
         </article>
         <article class="feature-row">
           <span class="feature-index">C</span>
           <div>
-            <h3>자연어 근거 설명</h3>
-            <p>ChatGPT API를 활용해 “왜 위험한지”를 쉬운 문장으로 요약해 사용자 신뢰도를 높입니다.</p>
+            <h3>노이즈와 질감 분포</h3>
+            <p>너무 매끈한 구간, 부분별로 튀는 노이즈, 부자연스러운 경계는 생성형 이미지나 보정 흔적 신호다.</p>
           </div>
         </article>
         <article class="feature-row">
           <span class="feature-index">D</span>
           <div>
-            <h3>플랫폼 연동 확장</h3>
-            <p>향후 게시글 등록 단계에서 자동 이미지 검증이 이루어지도록 중고거래 플랫폼과 연동할 수 있습니다.</p>
+            <h3>반복 패턴과 설명 불일치</h3>
+            <p>배경이나 표면 무늬가 반복되거나 판매 설명과 사진 상태가 어긋나면 위험도를 추가로 올린다.</p>
           </div>
         </article>
       </div>
     </section>
 
-    <section class="section workflow-section" aria-labelledby="workflow-title">
-      <div class="section-heading">
-        <p class="eyebrow">Demo Flow</p>
-        <h2 id="workflow-title">사용자가 거래 전에 확인하는 흐름</h2>
-      </div>
-      <ol class="workflow">
-        <li>
-          <span>1</span>
-          <h3>이미지 업로드</h3>
-          <p>중고거래 게시글의 상품 사진과 판매 설명을 입력합니다.</p>
-        </li>
-        <li>
-          <span>2</span>
-          <h3>AI 분석 실행</h3>
-          <p>이미지 패턴, 노이즈, 생성 흔적, 메타데이터를 함께 확인합니다.</p>
-        </li>
-        <li>
-          <span>3</span>
-          <h3>위험 등급 산출</h3>
-          <p>정상, 의심, 위험 단계로 결과를 정리해 바로 보여줍니다.</p>
-        </li>
-        <li>
-          <span>4</span>
-          <h3>근거 설명 제공</h3>
-          <p>사용자가 거래를 계속할지 판단할 수 있도록 핵심 이유를 설명합니다.</p>
-        </li>
-      </ol>
-    </section>
-
-    <section id="build" class="section build-section" aria-labelledby="build-title">
-      <div class="section-heading">
-        <p class="eyebrow">Build Plan</p>
-        <h2 id="build-title">제안서 기준 구현 계획</h2>
-      </div>
-      <div class="build-grid">
-        <article class="info-card">
-          <h3>AI 모델</h3>
-          <p>TensorFlow 또는 PyTorch 기반 CNN 분류 모델을 구현하고, AI 생성 이미지 데이터셋으로 학습합니다.</p>
-        </article>
-        <article class="info-card">
-          <h3>이미지 처리</h3>
-          <p>OpenCV로 노이즈, 경계선, 패턴, 보정 흔적을 전처리하고 모델 입력 품질을 높입니다.</p>
-        </article>
-        <article class="info-card">
-          <h3>웹 프로토타입</h3>
-          <p>Flask 또는 Streamlit으로 이미지 업로드와 분석 결과 확인이 가능한 MVP를 구성합니다.</p>
-        </article>
-        <article class="info-card">
-          <h3>설명 생성</h3>
-          <p>ChatGPT API로 판별 결과와 위험 근거를 자연어로 요약해 사용자에게 전달합니다.</p>
-        </article>
-      </div>
-    </section>
-
-    <section id="roadmap" class="section roadmap-section" aria-labelledby="roadmap-title">
-      <div class="section-heading">
-        <p class="eyebrow">Roadmap</p>
-        <h2 id="roadmap-title">1인 개발에 맞춘 단계별 추진 일정</h2>
-      </div>
-      <div class="roadmap">
-        <article>
-          <span>초기</span>
-          <h3>자료 조사와 데이터 확보</h3>
-          <p>중고거래 이미지 사기 사례, AI 생성 이미지 데이터셋, 조작 탐지 기술을 조사합니다.</p>
-        </article>
-        <article>
-          <span>중간</span>
-          <h3>모델 구현과 프로토타입</h3>
-          <p>CNN 판별 모델을 만들고, 업로드와 결과 확인이 가능한 웹 화면을 연결합니다.</p>
-        </article>
-        <article>
-          <span>후반</span>
-          <h3>설명 기능과 통합 테스트</h3>
-          <p>ChatGPT API 설명 기능을 붙이고 전체 시스템을 테스트해 완성도를 높입니다.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="section impact-section" aria-labelledby="impact-title">
+    <section class="section impact-section" aria-labelledby="logic-link-title">
       <div class="impact-copy">
-        <p class="eyebrow">Expected Impact</p>
-        <h2 id="impact-title">거래 전 이미지 신뢰도를 확인하는 작은 절차가 사기 피해를 줄입니다.</h2>
+        <p class="eyebrow">Explainability</p>
+        <h2 id="logic-link-title">왜 조작으로 보였는지 더 자세한 판단 방식은 따로 설명합니다.</h2>
         <p>
-          AI Looki Guard는 구매자가 육안으로 확인하기 어려운 위험 요소를 자동으로 발견하고,
-          플랫폼에는 사전 검증 절차를 추가할 수 있는 기반을 제공합니다. 향후 SNS, 온라인 쇼핑몰,
-          커뮤니티 마켓 등 이미지 신뢰성이 중요한 서비스로 확장할 수 있습니다.
+          메인 화면은 바로 분석하는 데 집중하고, 세부 판단 로직은 별도 페이지에 정리했다.
+          어떤 계산으로 점수가 올라가는지, 각 신호가 무엇을 의미하는지는 탐지 방식 페이지에서 볼 수 있다.
         </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="logic.html">탐지 방식 페이지 열기</a>
+        </div>
       </div>
     </section>
   </main>
-  <script defer src="app.js"></script>
 </body>
 </html>
