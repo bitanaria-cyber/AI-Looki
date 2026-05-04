@@ -133,7 +133,11 @@ function analyzeImage(image, file, bytes, description) {
   context.drawImage(image, 0, 0, width, height);
 
   const imageData = context.getImageData(0, 0, width, height);
-  const signals = calculateSignals(imageData, bytes, file, description);
+  const sourceDimensions = {
+    width: image.naturalWidth,
+    height: image.naturalHeight
+  };
+  const signals = calculateSignals(imageData, bytes, file, description, sourceDimensions);
   const score = clamp(
     signals.metadata.score +
       signals.block.score +
@@ -152,7 +156,7 @@ function analyzeImage(image, file, bytes, description) {
   };
 }
 
-function calculateSignals(imageData, bytes, file, description) {
+function calculateSignals(imageData, bytes, file, description, sourceDimensions) {
   const { data, width, height } = imageData;
   const total = width * height;
   const gray = new Float32Array(total);
@@ -173,7 +177,7 @@ function calculateSignals(imageData, bytes, file, description) {
   const block = calculateBlockArtifacts(gray, width, height);
   const texture = calculateTexture(gray, saturation, width, height, gradient);
   const repetition = calculateRepetition(gray, width, height);
-  const metadata = calculateMetadataScore(bytes, file);
+  const metadata = calculateMetadataScore(bytes, file, sourceDimensions);
   const descriptionScore = calculateDescriptionScore(description, texture, gradient);
 
   return {
@@ -418,21 +422,711 @@ function calculateRepetition(gray, width, height) {
   };
 }
 
-function calculateMetadataScore(bytes, file) {
-  const hasExif = hasJpegExif(bytes);
-  const isJpeg = file.type === "image/jpeg";
-  const score = isJpeg ? (hasExif ? 0 : 8) : 5;
+const EDITING_SOFTWARE_PATTERN =
+  /(photoshop|lightroom|gimp|snapseed|canva|picsart|pixelmator|affinity|meitu|paint\.net|adobe|editor|retouch|beautyplus)/i;
+const GENERATIVE_SOFTWARE_PATTERN =
+  /(midjourney|stable\s*diffusion|dall[-\s]?e|firefly|imagen|comfyui|automatic1111|invokeai|civitai|flux|ai\s*generated|generative)/i;
+
+function calculateMetadataScore(bytes, file, sourceDimensions) {
+  const metadata = extractImageMetadata(bytes, file);
+  const reasons = [];
+  let score = 0;
+
+  const claimedType = normalizeMimeType(file.type);
+  const detectedType = metadata.detectedType;
+  const hasCamera = Boolean(metadata.make || metadata.model);
+  const hasCaptureTime = Boolean(
+    metadata.dateTimeOriginal || metadata.dateTimeDigitized || metadata.dateTime
+  );
+  const metadataText = [
+    metadata.software,
+    metadata.xmpText,
+    ...metadata.textValues
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const softwareRisk = classifySoftware(metadataText);
+
+  if (!detectedType) {
+    score += 12;
+    reasons.push("파일 내부 헤더가 일반적인 JPG, PNG, WebP 이미지 형식과 맞지 않아 파일 출처 확인이 필요합니다.");
+  } else if (claimedType && claimedType !== detectedType) {
+    score += 8;
+    reasons.push("브라우저가 인식한 파일 형식과 실제 이미지 헤더가 달라 확장자 변경 또는 재저장 여부를 확인해야 합니다.");
+  }
+
+  if (!metadata.hasExif) {
+    score += detectedType === "image/jpeg" ? 8 : 5;
+    reasons.push("촬영 기기와 촬영 시각을 확인할 EXIF 정보가 없어 원본성 확인 근거가 약합니다. 단, 플랫폼 저장 과정에서도 삭제될 수 있습니다.");
+  } else {
+    if (!hasCamera) {
+      score += 7;
+      reasons.push("EXIF는 있지만 카메라 제조사나 모델 정보가 비어 있어 원본 촬영 파일인지 확인하기 어렵습니다.");
+    }
+
+    if (!hasCaptureTime) {
+      score += 7;
+      reasons.push("EXIF는 있지만 촬영 시각 정보가 없어 판매자가 직접 촬영한 사진인지 판단할 근거가 부족합니다.");
+    }
+  }
+
+  if (softwareRisk === "generative") {
+    score += 22;
+    reasons.unshift("메타데이터에 생성형 AI 또는 이미지 생성 도구 이름이 남아 있어 상품 실재 여부를 추가 확인해야 합니다.");
+  } else if (softwareRisk === "editor" || metadata.photoshopApp13) {
+    score += 14;
+    reasons.unshift("메타데이터에 이미지 편집 프로그램 흔적이 있어 보정 또는 합성 가능성을 확인해야 합니다.");
+  } else if (metadata.software && !hasCamera) {
+    score += 5;
+    reasons.push("촬영 기기 정보 없이 소프트웨어 정보만 남아 있어 원본 촬영 파일보다 재저장 파일에 가까운 신호입니다.");
+  }
+
+  const dateRisk = evaluateDateRisk(metadata);
+  if (dateRisk) {
+    score += dateRisk.score;
+    reasons.push(dateRisk.reason);
+  }
+
+  const dimensionRisk = evaluateDimensionRisk(metadata, sourceDimensions);
+  if (dimensionRisk) {
+    score += dimensionRisk.score;
+    reasons.push(dimensionRisk.reason);
+  }
+
+  if (metadata.hasXmp && /history|derivedfrom|creatortool|photoshop|xmpmm:/i.test(metadata.xmpText)) {
+    score += softwareRisk ? 3 : 7;
+    reasons.push("XMP 편집 이력으로 보이는 정보가 있어 원본 파일인지 추가 확인이 필요합니다.");
+  }
+
+  const finalScore = clamp(score, 0, 28);
 
   return {
     label: "메타데이터",
-    score,
-    value: hasExif ? 1 : 0,
-    display: hasExif ? "EXIF 있음" : "원본 정보 부족",
-    reason:
-      score > 0
-        ? "촬영 기기와 원본 시간 같은 메타데이터가 부족해 원본성 확인 근거가 약합니다."
-        : ""
+    score: finalScore,
+    value: metadata,
+    display: getMetadataDisplay(metadata, softwareRisk, hasCamera, hasCaptureTime),
+    reason: reasons[0] || "",
+    reasons: reasons.slice(0, 3)
   };
+}
+
+function extractImageMetadata(bytes, file) {
+  const data = new Uint8Array(bytes);
+  const metadata = {
+    detectedType: detectImageType(data),
+    claimedType: normalizeMimeType(file.type),
+    hasExif: false,
+    hasXmp: false,
+    photoshopApp13: false,
+    make: "",
+    model: "",
+    software: "",
+    dateTime: "",
+    dateTimeOriginal: "",
+    dateTimeDigitized: "",
+    orientation: null,
+    pixelWidth: null,
+    pixelHeight: null,
+    gps: false,
+    makerNote: false,
+    xmpText: "",
+    textValues: []
+  };
+
+  if (metadata.detectedType === "image/jpeg") {
+    parseJpegMetadata(data, metadata);
+  } else if (metadata.detectedType === "image/png") {
+    parsePngMetadata(data, metadata);
+  } else if (metadata.detectedType === "image/webp") {
+    parseWebpMetadata(data, metadata);
+  }
+
+  return metadata;
+}
+
+function parseJpegMetadata(data, metadata) {
+  let offset = 2;
+
+  while (offset + 4 <= data.length) {
+    if (data[offset] !== 0xff) {
+      offset += 1;
+      continue;
+    }
+
+    let markerOffset = offset + 1;
+    while (markerOffset < data.length && data[markerOffset] === 0xff) {
+      markerOffset += 1;
+    }
+
+    const marker = data[markerOffset];
+    offset = markerOffset + 1;
+
+    if (marker === 0xda || marker === 0xd9) {
+      break;
+    }
+
+    if (marker >= 0xd0 && marker <= 0xd7) {
+      continue;
+    }
+
+    if (offset + 2 > data.length) {
+      break;
+    }
+
+    const size = readUint16BE(data, offset);
+    const segmentStart = offset + 2;
+    const segmentEnd = offset + size;
+
+    if (size < 2 || segmentEnd > data.length) {
+      break;
+    }
+
+    if (marker === 0xe1) {
+      if (readBinaryString(data, segmentStart, 6) === "Exif\0\0") {
+        mergeExifMetadata(metadata, parseExifTiff(data, segmentStart + 6, segmentEnd - segmentStart - 6));
+      } else {
+        const app1Header = readBinaryString(data, segmentStart, Math.min(32, segmentEnd - segmentStart));
+        if (app1Header.startsWith("http://ns.adobe.com/xap/1.0/")) {
+          metadata.hasXmp = true;
+          metadata.xmpText += ` ${readText(data, segmentStart, segmentEnd - segmentStart)}`;
+        }
+      }
+    } else if (marker === 0xed) {
+      const app13Header = readBinaryString(data, segmentStart, Math.min(13, segmentEnd - segmentStart));
+      metadata.photoshopApp13 = metadata.photoshopApp13 || app13Header.includes("Photoshop");
+    } else if (isJpegStartOfFrame(marker) && segmentStart + 5 < segmentEnd) {
+      metadata.pixelHeight = metadata.pixelHeight || readUint16BE(data, segmentStart + 1);
+      metadata.pixelWidth = metadata.pixelWidth || readUint16BE(data, segmentStart + 3);
+    }
+
+    offset = segmentEnd;
+  }
+}
+
+function parsePngMetadata(data, metadata) {
+  let offset = 8;
+
+  while (offset + 8 <= data.length) {
+    const length = readUint32BE(data, offset);
+    const type = readBinaryString(data, offset + 4, 4);
+    const chunkStart = offset + 8;
+    const chunkEnd = chunkStart + length;
+
+    if (chunkEnd + 4 > data.length) {
+      break;
+    }
+
+    if (type === "eXIf") {
+      mergeExifMetadata(metadata, parseExifTiff(data, chunkStart, length));
+    } else if (type === "tEXt") {
+      parsePngTextChunk(data, chunkStart, length, metadata);
+    } else if (type === "iTXt") {
+      parsePngInternationalTextChunk(data, chunkStart, length, metadata);
+    }
+
+    offset = chunkEnd + 4;
+  }
+}
+
+function parseWebpMetadata(data, metadata) {
+  let offset = 12;
+
+  while (offset + 8 <= data.length) {
+    const type = readBinaryString(data, offset, 4);
+    const length = readUint32LE(data, offset + 4);
+    const chunkStart = offset + 8;
+    const chunkEnd = chunkStart + length;
+
+    if (chunkEnd > data.length) {
+      break;
+    }
+
+    if (type === "EXIF") {
+      const startsWithHeader = readBinaryString(data, chunkStart, 6) === "Exif\0\0";
+      const tiffStart = startsWithHeader ? chunkStart + 6 : chunkStart;
+      mergeExifMetadata(metadata, parseExifTiff(data, tiffStart, chunkEnd - tiffStart));
+    } else if (type === "XMP ") {
+      metadata.hasXmp = true;
+      metadata.xmpText += ` ${readText(data, chunkStart, length)}`;
+    }
+
+    offset = chunkEnd + (length % 2);
+  }
+}
+
+function parseExifTiff(data, tiffStart, tiffLength) {
+  const exif = {
+    hasExif: false
+  };
+
+  if (tiffLength < 8 || tiffStart < 0 || tiffStart + tiffLength > data.length) {
+    return exif;
+  }
+
+  const byteOrder = readBinaryString(data, tiffStart, 2);
+  const littleEndian = byteOrder === "II";
+
+  if (!littleEndian && byteOrder !== "MM") {
+    return exif;
+  }
+
+  const view = new DataView(data.buffer, data.byteOffset + tiffStart, tiffLength);
+
+  if (view.getUint16(2, littleEndian) !== 42) {
+    return exif;
+  }
+
+  exif.hasExif = true;
+  const ifd0Offset = view.getUint32(4, littleEndian);
+  const pointers = {};
+
+  parseExifIfd(view, data, tiffStart, tiffLength, ifd0Offset, littleEndian, exif, pointers, "ifd0");
+
+  if (pointers.exif) {
+    parseExifIfd(view, data, tiffStart, tiffLength, pointers.exif, littleEndian, exif, pointers, "exif");
+  }
+
+  if (pointers.gps) {
+    exif.gps = true;
+  }
+
+  return exif;
+}
+
+function parseExifIfd(view, data, tiffStart, tiffLength, ifdOffset, littleEndian, exif, pointers, scope) {
+  if (!Number.isFinite(ifdOffset) || ifdOffset < 0 || ifdOffset + 2 > tiffLength) {
+    return;
+  }
+
+  const entryCount = view.getUint16(ifdOffset, littleEndian);
+  const safeEntryCount = Math.min(entryCount, 256);
+
+  for (let index = 0; index < safeEntryCount; index += 1) {
+    const entryOffset = ifdOffset + 2 + index * 12;
+
+    if (entryOffset + 12 > tiffLength) {
+      break;
+    }
+
+    const tag = view.getUint16(entryOffset, littleEndian);
+    const type = view.getUint16(entryOffset + 2, littleEndian);
+    const count = view.getUint32(entryOffset + 4, littleEndian);
+    const valueOffset = view.getUint32(entryOffset + 8, littleEndian);
+    const value = readTiffValue(view, data, tiffStart, tiffLength, entryOffset, type, count, valueOffset, littleEndian);
+
+    if (scope === "ifd0") {
+      applyIfd0Tag(exif, pointers, tag, value);
+    } else if (scope === "exif") {
+      applyExifSubTag(exif, tag, value);
+    }
+  }
+}
+
+function applyIfd0Tag(exif, pointers, tag, value) {
+  if (tag === 0x010f) {
+    exif.make = cleanMetadataText(value);
+  } else if (tag === 0x0110) {
+    exif.model = cleanMetadataText(value);
+  } else if (tag === 0x0112) {
+    exif.orientation = value;
+  } else if (tag === 0x0131) {
+    exif.software = cleanMetadataText(value);
+  } else if (tag === 0x0132) {
+    exif.dateTime = cleanMetadataText(value);
+  } else if (tag === 0x0100) {
+    exif.pixelWidth = value;
+  } else if (tag === 0x0101) {
+    exif.pixelHeight = value;
+  } else if (tag === 0x8769) {
+    pointers.exif = value;
+  } else if (tag === 0x8825) {
+    pointers.gps = value;
+  }
+}
+
+function applyExifSubTag(exif, tag, value) {
+  if (tag === 0x9003) {
+    exif.dateTimeOriginal = cleanMetadataText(value);
+  } else if (tag === 0x9004) {
+    exif.dateTimeDigitized = cleanMetadataText(value);
+  } else if (tag === 0xa002) {
+    exif.pixelWidth = value;
+  } else if (tag === 0xa003) {
+    exif.pixelHeight = value;
+  } else if (tag === 0x927c) {
+    exif.makerNote = true;
+  }
+}
+
+function readTiffValue(view, data, tiffStart, tiffLength, entryOffset, type, count, valueOffset, littleEndian) {
+  const typeSizes = {
+    1: 1,
+    2: 1,
+    3: 2,
+    4: 4,
+    5: 8,
+    7: 1,
+    9: 4,
+    10: 8
+  };
+  const typeSize = typeSizes[type];
+
+  if (!typeSize || count <= 0) {
+    return null;
+  }
+
+  const valueLength = typeSize * count;
+  const inline = valueLength <= 4;
+  const relativeValueOffset = inline ? entryOffset + 8 : valueOffset;
+
+  if (relativeValueOffset < 0 || relativeValueOffset + valueLength > tiffLength) {
+    return null;
+  }
+
+  const absoluteValueOffset = tiffStart + relativeValueOffset;
+
+  if (type === 2) {
+    return cleanMetadataText(readText(data, absoluteValueOffset, valueLength));
+  }
+
+  if (type === 3) {
+    return count === 1
+      ? view.getUint16(relativeValueOffset, littleEndian)
+      : readTiffNumberArray(view, relativeValueOffset, count, "getUint16", littleEndian);
+  }
+
+  if (type === 4) {
+    return count === 1
+      ? view.getUint32(relativeValueOffset, littleEndian)
+      : readTiffNumberArray(view, relativeValueOffset, count, "getUint32", littleEndian);
+  }
+
+  if (type === 7) {
+    return { present: true, bytes: valueLength };
+  }
+
+  return null;
+}
+
+function readTiffNumberArray(view, relativeOffset, count, method, littleEndian) {
+  const step = method === "getUint16" ? 2 : 4;
+  const values = [];
+  const safeCount = Math.min(count, 8);
+
+  for (let index = 0; index < safeCount; index += 1) {
+    values.push(view[method](relativeOffset + index * step, littleEndian));
+  }
+
+  return values;
+}
+
+function mergeExifMetadata(metadata, exif) {
+  if (!exif || !exif.hasExif) {
+    return;
+  }
+
+  metadata.hasExif = true;
+  metadata.make = metadata.make || exif.make || "";
+  metadata.model = metadata.model || exif.model || "";
+  metadata.software = metadata.software || exif.software || "";
+  metadata.dateTime = metadata.dateTime || exif.dateTime || "";
+  metadata.dateTimeOriginal = metadata.dateTimeOriginal || exif.dateTimeOriginal || "";
+  metadata.dateTimeDigitized = metadata.dateTimeDigitized || exif.dateTimeDigitized || "";
+  metadata.orientation = metadata.orientation || exif.orientation || null;
+  metadata.pixelWidth = metadata.pixelWidth || exif.pixelWidth || null;
+  metadata.pixelHeight = metadata.pixelHeight || exif.pixelHeight || null;
+  metadata.gps = metadata.gps || Boolean(exif.gps);
+  metadata.makerNote = metadata.makerNote || Boolean(exif.makerNote);
+}
+
+function parsePngTextChunk(data, start, length, metadata) {
+  const text = readText(data, start, length);
+  const separatorIndex = text.indexOf("\0");
+
+  if (separatorIndex === -1) {
+    return;
+  }
+
+  const keyword = cleanMetadataText(text.slice(0, separatorIndex));
+  const value = cleanMetadataText(text.slice(separatorIndex + 1));
+  applyTextMetadata(keyword, value, metadata);
+}
+
+function parsePngInternationalTextChunk(data, start, length, metadata) {
+  const end = start + length;
+  let cursor = start;
+  const keywordEnd = findNullByte(data, cursor, end);
+
+  if (keywordEnd === -1 || keywordEnd + 3 >= end) {
+    return;
+  }
+
+  const keyword = cleanMetadataText(readText(data, cursor, keywordEnd - cursor));
+  const compressionFlag = data[keywordEnd + 1];
+
+  if (compressionFlag !== 0) {
+    return;
+  }
+
+  cursor = keywordEnd + 3;
+  const languageEnd = findNullByte(data, cursor, end);
+
+  if (languageEnd === -1) {
+    return;
+  }
+
+  cursor = languageEnd + 1;
+  const translatedEnd = findNullByte(data, cursor, end);
+
+  if (translatedEnd === -1) {
+    return;
+  }
+
+  cursor = translatedEnd + 1;
+  const value = cleanMetadataText(readText(data, cursor, end - cursor));
+  applyTextMetadata(keyword, value, metadata);
+}
+
+function applyTextMetadata(keyword, value, metadata) {
+  if (!value) {
+    return;
+  }
+
+  metadata.textValues.push(`${keyword}: ${value}`);
+
+  if (/software|creator|tool/i.test(keyword) && !metadata.software) {
+    metadata.software = value;
+  }
+
+  if (/creation|date|time/i.test(keyword) && !metadata.dateTime) {
+    metadata.dateTime = value;
+  }
+
+  if (/xmp|xml:com\.adobe\.xmp/i.test(keyword)) {
+    metadata.hasXmp = true;
+    metadata.xmpText += ` ${value}`;
+  }
+}
+
+function classifySoftware(text) {
+  if (!text) {
+    return "";
+  }
+
+  if (GENERATIVE_SOFTWARE_PATTERN.test(text)) {
+    return "generative";
+  }
+
+  if (EDITING_SOFTWARE_PATTERN.test(text)) {
+    return "editor";
+  }
+
+  return "";
+}
+
+function evaluateDateRisk(metadata) {
+  const rawDate = metadata.dateTimeOriginal || metadata.dateTimeDigitized || metadata.dateTime;
+  const parsedDate = parseMetadataDate(rawDate);
+
+  if (!parsedDate) {
+    return null;
+  }
+
+  if (parsedDate.getTime() > Date.now() + 24 * 60 * 60 * 1000) {
+    return {
+      score: 10,
+      reason: "촬영 시각 메타데이터가 현재보다 미래로 기록되어 있어 기기 시간 오류나 조작 여부를 확인해야 합니다."
+    };
+  }
+
+  return null;
+}
+
+function evaluateDimensionRisk(metadata, sourceDimensions) {
+  if (
+    !metadata.pixelWidth ||
+    !metadata.pixelHeight ||
+    !sourceDimensions ||
+    !sourceDimensions.width ||
+    !sourceDimensions.height
+  ) {
+    return null;
+  }
+
+  const directDifference =
+    Math.abs(metadata.pixelWidth - sourceDimensions.width) +
+    Math.abs(metadata.pixelHeight - sourceDimensions.height);
+  const swappedDifference =
+    Math.abs(metadata.pixelWidth - sourceDimensions.height) +
+    Math.abs(metadata.pixelHeight - sourceDimensions.width);
+  const bestDifference = Math.min(directDifference, swappedDifference);
+  const tolerance = Math.max(24, Math.max(sourceDimensions.width, sourceDimensions.height) * 0.02);
+
+  if (bestDifference > tolerance) {
+    return {
+      score: 8,
+      reason: "EXIF에 기록된 이미지 크기와 실제 표시 크기가 달라 크롭, 회전, 재저장 또는 편집 여부를 확인해야 합니다."
+    };
+  }
+
+  return null;
+}
+
+function getMetadataDisplay(metadata, softwareRisk, hasCamera, hasCaptureTime) {
+  if (!metadata.detectedType) {
+    return "형식 확인 필요";
+  }
+
+  if (softwareRisk === "generative") {
+    return "생성 도구";
+  }
+
+  if (softwareRisk === "editor" || metadata.photoshopApp13) {
+    return "편집 흔적";
+  }
+
+  if (metadata.hasExif && hasCamera && hasCaptureTime) {
+    return "촬영 정보 있음";
+  }
+
+  if (metadata.hasExif) {
+    return "부분 정보";
+  }
+
+  return "원본 정보 부족";
+}
+
+function detectImageType(data) {
+  if (data.length >= 3 && data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) {
+    return "image/jpeg";
+  }
+
+  if (
+    data.length >= 8 &&
+    data[0] === 0x89 &&
+    data[1] === 0x50 &&
+    data[2] === 0x4e &&
+    data[3] === 0x47 &&
+    data[4] === 0x0d &&
+    data[5] === 0x0a &&
+    data[6] === 0x1a &&
+    data[7] === 0x0a
+  ) {
+    return "image/png";
+  }
+
+  if (
+    data.length >= 12 &&
+    readBinaryString(data, 0, 4) === "RIFF" &&
+    readBinaryString(data, 8, 4) === "WEBP"
+  ) {
+    return "image/webp";
+  }
+
+  return "";
+}
+
+function normalizeMimeType(type) {
+  if (!type) {
+    return "";
+  }
+
+  return type.toLowerCase() === "image/jpg" ? "image/jpeg" : type.toLowerCase();
+}
+
+function isJpegStartOfFrame(marker) {
+  return (
+    marker === 0xc0 ||
+    marker === 0xc1 ||
+    marker === 0xc2 ||
+    marker === 0xc3 ||
+    marker === 0xc5 ||
+    marker === 0xc6 ||
+    marker === 0xc7 ||
+    marker === 0xc9 ||
+    marker === 0xca ||
+    marker === 0xcb ||
+    marker === 0xcd ||
+    marker === 0xce ||
+    marker === 0xcf
+  );
+}
+
+function parseMetadataDate(value) {
+  if (!value || typeof value !== "string") {
+    return null;
+  }
+
+  const match = value.match(/(\d{4})[:/-](\d{2})[:/-](\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
+
+  if (!match) {
+    return null;
+  }
+
+  const [, year, month, day, hour, minute, second] = match.map(Number);
+  const parsedDate = new Date(year, month - 1, day, hour, minute, second);
+
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+}
+
+function readUint16BE(data, offset) {
+  return (data[offset] << 8) + data[offset + 1];
+}
+
+function readUint32BE(data, offset) {
+  return (
+    data[offset] * 0x1000000 +
+    ((data[offset + 1] << 16) | (data[offset + 2] << 8) | data[offset + 3])
+  );
+}
+
+function readUint32LE(data, offset) {
+  return (
+    data[offset] +
+    (data[offset + 1] << 8) +
+    (data[offset + 2] << 16) +
+    data[offset + 3] * 0x1000000
+  );
+}
+
+function readBinaryString(data, start, length) {
+  let text = "";
+  const end = Math.min(data.length, start + length);
+
+  for (let index = start; index < end; index += 1) {
+    text += String.fromCharCode(data[index]);
+  }
+
+  return text;
+}
+
+function readText(data, start, length) {
+  const end = Math.min(data.length, start + length);
+  const slice = data.subarray(start, end);
+
+  if (typeof TextDecoder !== "undefined") {
+    return new TextDecoder("utf-8", { fatal: false }).decode(slice);
+  }
+
+  return readBinaryString(data, start, length);
+}
+
+function cleanMetadataText(value) {
+  if (!value || typeof value !== "string") {
+    return "";
+  }
+
+  return value.replace(/\0/g, "").replace(/[\u0001-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function findNullByte(data, start, end) {
+  for (let index = start; index < end; index += 1) {
+    if (data[index] === 0) {
+      return index;
+    }
+  }
+
+  return -1;
 }
 
 function calculateDescriptionScore(description, texture, gradient) {
@@ -543,7 +1237,7 @@ function getVerdict(score) {
 function renderResult(result) {
   const { score, verdict, signals } = result;
   const reasons = Object.values(signals)
-    .map((signal) => signal.reason)
+    .flatMap((signal) => (signal.reasons && signal.reasons.length ? signal.reasons : [signal.reason]))
     .filter(Boolean);
 
   resultBadge.textContent = verdict.label;
@@ -607,7 +1301,9 @@ function renderEmptyResult(title = "이미지를 업로드하세요", summary = 
     <article><span>메타데이터</span><strong>--</strong></article>
     <article><span>압축 흔적</span><strong>--</strong></article>
     <article><span>노이즈 균일도</span><strong>--</strong></article>
+    <article><span>경계선 자연도</span><strong>--</strong></article>
     <article><span>패턴 반복</span><strong>--</strong></article>
+    <article><span>설명 일치도</span><strong>--</strong></article>
   `;
 }
 
