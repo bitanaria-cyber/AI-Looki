@@ -23,6 +23,9 @@
       <span class="brand-mark" aria-hidden="true"></span>
       AI Looki Guard
     </a>
+    <a class="top-search" href="#scanner" aria-label="이미지 분석으로 이동">
+      <span>중고거래 사진이나 판매글을 분석해보세요</span>
+    </a>
     <nav class="nav-links" aria-label="주요 섹션">
       <a href="#scanner">분석 메인</a>
       <a href="#purpose">필요성</a>
@@ -35,22 +38,39 @@
 
   <main id="top">
     <section id="scanner" class="section scanner-section scanner-page" aria-labelledby="scanner-title">
+      <div class="category-strip" aria-label="중고거래 카테고리">
+        <span>전자기기</span>
+        <span>스니커즈</span>
+        <span>명품/잡화</span>
+        <span>게임/취미</span>
+        <span>생활가전</span>
+        <span>안전거래</span>
+      </div>
       <div class="section-heading">
-        <p class="eyebrow">Live Scanner</p>
-        <h1 id="scanner-title">루트 화면에서 바로 이미지 조작 가능성을 분석합니다</h1>
+        <p class="eyebrow">안심 중고거래 스캐너</p>
+        <h1 id="scanner-title">거래 전, 상품 사진부터 먼저 확인하세요</h1>
         <p class="hero-lead">
           중고거래 상품 사진을 업로드하면 브라우저에서 압축 경계, 노이즈 분포, 반복 패턴, 메타데이터,
           판매 설명과의 불일치를 함께 계산해 조작 가능성과 핵심 근거를 바로 표시합니다.
         </p>
+        <div class="trust-summary" aria-label="거래 전 확인 항목">
+          <span>사진 원본성</span>
+          <span>판매글 일치도</span>
+          <span>외부 사기조회 연결</span>
+        </div>
         <div class="hero-actions" aria-label="분석 관련 링크">
-          <a class="button button-primary" href="logic.html">어떤 방식으로 판단하는지 보기</a>
+          <a class="button button-primary" href="#scanner">사진 분석하기</a>
           <a class="button button-secondary" href="https://thecheat.co.kr/" target="_blank" rel="noopener noreferrer">더치트 공식 조회</a>
-          <a class="button button-secondary" href="proposal.html">제안 개요 보기</a>
+          <a class="button button-secondary" href="logic.html">판단 방식 보기</a>
         </div>
       </div>
 
       <div class="scanner-layout">
         <section class="scanner-panel upload-panel" aria-label="이미지 업로드">
+          <div class="panel-kicker">
+            <span class="trade-badge">판매글 검사</span>
+            <span>이미지와 설명을 함께 확인</span>
+          </div>
           <label class="upload-zone" id="dropZone" for="imageInput">
             <span class="upload-token">AI</span>
             <strong>상품 이미지 업로드</strong>
@@ -80,7 +100,7 @@
         <section class="scanner-panel result-panel" aria-label="분석 결과">
           <div class="result-topline">
             <span class="verdict-badge neutral" id="resultBadge">대기</span>
-            <span class="model-chip">Metadata + pixel signals</span>
+            <span class="model-chip">안전도 점검</span>
           </div>
 
           <div class="risk-meter">
