@@ -715,6 +715,78 @@ textarea:focus-visible {
   font-size: 1.6rem;
 }
 
+.section-lead {
+  max-width: 760px;
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.74;
+}
+
+.purpose-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 34px;
+}
+
+.purpose-card {
+  min-height: 250px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.purpose-card h3 {
+  margin-top: 28px;
+  font-size: 1.16rem;
+  line-height: 1.35;
+}
+
+.purpose-card p {
+  margin-top: 12px;
+  color: var(--muted);
+  line-height: 1.72;
+}
+
+.decision-flow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.decision-flow article {
+  min-height: 142px;
+  padding: 20px;
+  border-right: 1px solid var(--line);
+}
+
+.decision-flow article:last-child {
+  border-right: 0;
+}
+
+.decision-flow strong {
+  display: block;
+  font-weight: 800;
+}
+
+.decision-flow span {
+  display: block;
+  margin-top: 16px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.decision-flow a {
+  color: var(--blue);
+  font-weight: 800;
+}
+
 .problem-grid,
 .build-grid {
   display: grid;
@@ -883,6 +955,7 @@ textarea:focus-visible {
   }
 
   .build-grid,
+  .purpose-grid,
   .workflow {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -924,6 +997,18 @@ textarea:focus-visible {
   .workflow,
   .roadmap {
     grid-template-columns: 1fr;
+  }
+
+  .decision-flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .decision-flow article:nth-child(2) {
+    border-right: 0;
+  }
+
+  .decision-flow article:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--line);
   }
 
   .section {
@@ -968,8 +1053,19 @@ textarea:focus-visible {
   }
 
   .risk-meter,
-  .metric-grid {
+  .metric-grid,
+  .purpose-grid,
+  .decision-flow {
     grid-template-columns: 1fr;
+  }
+
+  .decision-flow article {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .decision-flow article:last-child {
+    border-bottom: 0;
   }
 
   .score {
